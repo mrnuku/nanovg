@@ -16,6 +16,9 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// to compile this on raspi execute the following command from the example directory:
+// gcc -o example_brcmegl -s -O2 example_brcmegl.c -DNANOVG_GLES2_IMPLEMENTATION demo.c perf.c -I../src ../src/nanovg.c $(PKG_CONFIG_PATH=/opt/vc/lib/pkgconfig pkg-config --cflags --libs brcmegl) -lrt -lm
+
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
@@ -58,8 +61,8 @@ typedef struct {
   uint32_t height;
   
   DemoData data;
-	NVGcontext* vg;
-	PerfGraph fps;
+  NVGcontext* vg;
+  PerfGraph fps;
 } ui_state_s;
 
 typedef struct {
@@ -90,7 +93,7 @@ typedef struct {
   
   // time specific
   uint32_t fnum;
-	double t;
+  double t;
   double dt;
   
   // system specific
@@ -101,16 +104,16 @@ typedef struct {
 
 /*static void key(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	NVG_NOTUSED(scancode);
-	NVG_NOTUSED(mods);
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
-	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-		blowup = !blowup;
-	if (key == GLFW_KEY_S && action == GLFW_PRESS)
-		screenshot = 1;
-	if (key == GLFW_KEY_P && action == GLFW_PRESS)
-		premult = !premult;
+  NVG_NOTUSED(scancode);
+  NVG_NOTUSED(mods);
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    glfwSetWindowShouldClose(window, GL_TRUE);
+  if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    blowup = !blowup;
+  if (key == GLFW_KEY_S && action == GLFW_PRESS)
+    screenshot = 1;
+  if (key == GLFW_KEY_P && action == GLFW_PRESS)
+    premult = !premult;
 }*/
 
 const char *bit_rep[16] = {
@@ -159,7 +162,7 @@ static void initEGL(renderer_backend_state_s *rbs) {
   EGLConfig config;
   
   LOG_MODULE_INIT("bcm_host_init\n");
-	bcm_host_init();
+  bcm_host_init();
 
   // get an EGL display connection
   LOG_MODULE_INIT("eglGetDisplay\n");
@@ -235,7 +238,7 @@ static void initEGL(renderer_backend_state_s *rbs) {
   check();
   
   LOG_MODULE_INIT("eglSwapInterval\n");
-	eglSwapInterval(rbs->display, 0);
+  eglSwapInterval(rbs->display, 0);
 
   // Set background color and clear buffers
   glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
@@ -265,21 +268,21 @@ static void initUI(ui_state_s *uis, renderer_backend_state_s *rbs) {
   uis->height = rbs->screen_height;
   
   LOG_MODULE_INIT("initGraph\n");
-	initGraph(&uis->fps, GRAPH_RENDER_FPS, "Frame Time");
+  initGraph(&uis->fps, GRAPH_RENDER_FPS, "Frame Time");
   
   LOG_MODULE_INIT("nvgCreateGLES2\n");
-	uis->vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
-	assert(uis->vg != NULL);
+  uis->vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
+  assert(uis->vg != NULL);
 
-	LOG_MODULE_INIT("loadDemoData\n");
-	assert(loadDemoData(uis->vg, &uis->data) != -1);
+  LOG_MODULE_INIT("loadDemoData\n");
+  assert(loadDemoData(uis->vg, &uis->data) != -1);
 }
 
 static void initSimulation(simulation_state_s *ss) {
   memset(ss, 0, sizeof(simulation_state_s));
   
   clock_gettime(CLOCK_MONOTONIC, &ss->startt);
-	ss->prevt = ss->startt;
+  ss->prevt = ss->startt;
 }
 
 static void updateSimulationTimers(simulation_state_s *ss) {
@@ -299,14 +302,14 @@ static int handleLinuxMice(mouse_state_s *ms, ui_state_s *uis, simulation_state_
   int newy = ms->py = ms->y;
 
   ms->pfd.revents = 0;
-	int pres = poll(&ms->pfd, 1, 0);
-	
-	if (pres == -1 && errno != EINTR) {
-		fprintf(stderr, "m: poll(): %s.\n", strerror(errno));
+  int pres = poll(&ms->pfd, 1, 0);
+  
+  if (pres == -1 && errno != EINTR) {
+    fprintf(stderr, "m: poll(): %s.\n", strerror(errno));
     
-		return -1;
-	}
-	else if (pres > 0 && ms->pfd.revents & POLLIN) {
+    return -1;
+  }
+  else if (pres > 0 && ms->pfd.revents & POLLIN) {
     do {
       signed char mice_data[3];
       int bytes = read(ms->pfd.fd, mice_data, sizeof(mice_data));
@@ -360,39 +363,39 @@ static int handleLinuxMice(mouse_state_s *ms, ui_state_s *uis, simulation_state_
       
     } while (1);
     
-		return 1;
-	}
+    return 1;
+  }
 
   return 0; 
 }
 
 void drawMouse(mouse_state_s *ms, ui_state_s *uis, simulation_state_s *ss) {
-	int i;
-	float r0, r1, aeps;
-	float hue = sinf(ss->t * 0.12f) * 10.0;
+  int i;
+  float r0, r1, aeps;
+  float hue = sinf(ss->t * 0.12f) * 10.0;
 
-	nvgSave(uis->vg);
+  nvgSave(uis->vg);
   
   //nvgRotate(uis->vg, hue);
 
-	r1 = (uis->width < uis->height ? uis->width : uis->height) * 0.05f - 5.0f;
-	r0 = r1 - 20.0f;
-	aeps = 0.5f / r1;	// half a pixel arc length in radians (2pi cancels out).
+  r1 = (uis->width < uis->height ? uis->width : uis->height) * 0.05f - 5.0f;
+  r0 = r1 - 20.0f;
+  aeps = 0.5f / r1;  // half a pixel arc length in radians (2pi cancels out).
   
   nvgStrokeColor(uis->vg, nvgRGBA(255,255,255,128));
-	nvgStrokeWidth(uis->vg, 3.0f);
+  nvgStrokeWidth(uis->vg, 3.0f);
 
-	for (i = 0; i < 6; i++) {
-		float a0 = (float)i / 6.0f * NVG_PI * 2.0f - aeps;
-		float a1 = (float)(i+1.0f) / 6.0f * NVG_PI * 2.0f + aeps;
-		nvgBeginPath(uis->vg);
-		nvgArc(uis->vg, ms->x, ms->y, r0 + hue, a0, a1, NVG_CW);
-		nvgArc(uis->vg, ms->x, ms->y, r1 - hue, a1, a0, NVG_CCW);
-		nvgClosePath(uis->vg);
-		nvgStroke(uis->vg);
-	}
+  for (i = 0; i < 6; i++) {
+    float a0 = (float)i / 6.0f * NVG_PI * 2.0f - aeps;
+    float a1 = (float)(i+1.0f) / 6.0f * NVG_PI * 2.0f + aeps;
+    nvgBeginPath(uis->vg);
+    nvgArc(uis->vg, ms->x, ms->y, r0 + hue, a0, a1, NVG_CW);
+    nvgArc(uis->vg, ms->x, ms->y, r1 - hue, a1, a0, NVG_CCW);
+    nvgClosePath(uis->vg);
+    nvgStroke(uis->vg);
+  }
 
-	nvgRestore(uis->vg);
+  nvgRestore(uis->vg);
 }
 
 #undef LOG_MODULE_LVL
@@ -406,73 +409,73 @@ int main() {
   simulation_state_s *ss = &ssr;
   ui_state_s uisr;
   ui_state_s *uis = &uisr;
-	
-	LOG_MODULE_INIT("initEGL\n");
-	initEGL(rbs);
+  
+  LOG_MODULE_INIT("initEGL\n");
+  initEGL(rbs);
   
   LOG_MODULE_INIT("initUI\n");
-	initUI(uis, rbs);
+  initUI(uis, rbs);
   
   LOG_MODULE_INIT("initMouse\n");
   initMouse(ms, uis);
 
   LOG_MODULE_INIT("initSimulation\n");
-	initSimulation(ss);
+  initSimulation(ss);
 
-	while (1) {
+  while (1) {
     updateSimulationTimers(ss);
-		updateGraph(&uis->fps, ss->dt);
-		handleLinuxMice(ms, uis, ss);
+    updateGraph(&uis->fps, ss->dt);
+    handleLinuxMice(ms, uis, ss);
 
-		// Update and render
-		glViewport(0, 0, rbs->screen_width, rbs->screen_height);
+    // Update and render
+    glViewport(0, 0, rbs->screen_width, rbs->screen_height);
     
-		if (ss->premult) {
-			glClearColor(0,0,0,0);
+    if (ss->premult) {
+      glClearColor(0,0,0,0);
     }
-		else {
-			glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
+    else {
+      glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
     }
     
-		glClear(GL_COLOR_BUFFER_BIT/*|GL_DEPTH_BUFFER_BIT*/|GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT/*|GL_DEPTH_BUFFER_BIT*/|GL_STENCIL_BUFFER_BIT);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_CULL_FACE);
-		//glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    //glDisable(GL_DEPTH_TEST);
 
-		nvgBeginFrame(uis->vg, uis->width, uis->height, 1);
+    nvgBeginFrame(uis->vg, uis->width, uis->height, 1);
 
-		renderDemo(uis->vg, ms->x, ms->y, uis->width, uis->height, ss->t, ss->blowup, &uis->data);
-		renderGraph(uis->vg, 5, 5, &uis->fps);
+    renderDemo(uis->vg, ms->x, ms->y, uis->width, uis->height, ss->t, ss->blowup, &uis->data);
+    renderGraph(uis->vg, 5, 5, &uis->fps);
     drawMouse(ms, uis, ss);
 
-		nvgEndFrame(uis->vg);
+    nvgEndFrame(uis->vg);
 
-		if (ss->screenshot) {
-			ss->screenshot = 0;
-			saveScreenShot(rbs->screen_width, rbs->screen_height, ss->premult, "dump.png");
-		}
-		
-		//glEnable(GL_DEPTH_TEST);
-		
-		glFlush();
+    if (ss->screenshot) {
+      ss->screenshot = 0;
+      saveScreenShot(rbs->screen_width, rbs->screen_height, ss->premult, "dump.png");
+    }
+    
+    //glEnable(GL_DEPTH_TEST);
+    
+    glFlush();
     glFinish();
     check();
-    
+
     eglSwapBuffers(rbs->display, rbs->surface);
     check();
-		
-		ss->fnum++;
-	}
+    
+    ss->fnum++;
+  }
 
-	LOG_MODULE_INIT("freeDemoData\n");
-	freeDemoData(uis->vg, &uis->data);
+  LOG_MODULE_INIT("freeDemoData\n");
+  freeDemoData(uis->vg, &uis->data);
 
-	LOG_MODULE_INIT("nvgDeleteGLES2\n");
-	nvgDeleteGLES2(uis->vg);
-	
-	printf("Statistics: %i frames in %.2f secs = %.1f FPS\n", ss->fnum, ss->t, ss->fnum / ss->t);
+  LOG_MODULE_INIT("nvgDeleteGLES2\n");
+  nvgDeleteGLES2(uis->vg);
+  
+  printf("Statistics: %i frames in %.2f secs = %.1f FPS\n", ss->fnum, ss->t, ss->fnum / ss->t);
 
-	return 0;
+  return 0;
 }

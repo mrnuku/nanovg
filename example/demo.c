@@ -5,7 +5,12 @@
 #ifdef NANOVG_GLEW
 #  include <GL/glew.h>
 #endif
-#include <GLFW/glfw3.h>
+#ifdef NANOVG_GLFW
+#  include <GLFW/glfw3.h>
+#endif
+#ifdef NANOVG_GLES2_IMPLEMENTATION
+#include <GLES2/gl2.h>
+#endif
 #include "nanovg.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"

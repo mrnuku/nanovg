@@ -5,7 +5,12 @@
 #ifdef NANOVG_GLEW
 #  include <GL/glew.h>
 #endif
-#include <GLFW/glfw3.h>
+#ifdef NANOVG_GLFW
+#  include <GLFW/glfw3.h>
+#endif
+#ifdef NANOVG_GLES2_IMPLEMENTATION
+#include <GLES2/gl2.h>
+#endif
 #include "nanovg.h"
 
 #ifdef _MSC_VER
@@ -43,7 +48,9 @@ void startGPUTimer(GPUtimer* timer)
 {
 	if (!timer->supported)
 		return;
+#ifndef NANOVG_GLES2_IMPLEMENTATION
 	glBeginQuery(GL_TIME_ELAPSED, timer->queries[timer->cur % GPU_QUERY_COUNT] );
+#endif
 	timer->cur++;
 }
 
@@ -56,6 +63,7 @@ int stopGPUTimer(GPUtimer* timer, float* times, int maxTimes)
 	if (!timer->supported)
 		return 0;
 
+#ifndef NANOVG_GLES2_IMPLEMENTATION
 	glEndQuery(GL_TIME_ELAPSED);
 	while (available && timer->ret <= timer->cur) {
 		// check for results if there are any
@@ -70,6 +78,7 @@ int stopGPUTimer(GPUtimer* timer, float* times, int maxTimes)
 			}*/
 		}
 	}
+#endif
 	return n;
 }
 
